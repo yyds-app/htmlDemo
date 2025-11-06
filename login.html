@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>登录</title>
+<style>
+body { font-family: Arial; margin:0; padding:20px; background:#f5f5f5; }
+.container { background:#fff; padding:20px; margin:50px auto; border-radius:10px; max-width:400px; box-shadow:0 4px 8px rgba(0,0,0,0.1);}
+input { width:100%; padding:12px; margin:10px 0; border-radius:6px; border:1px solid #ccc; }
+button { width:100%; padding:12px; margin-top:10px; background:#4CAF50; color:#fff; font-size:16px; border:none; border-radius:6px; }
+button:hover { background:#45a049; }
+#message { text-align:center; margin-top:15px; font-weight:bold; }
+a { display:block; text-align:center; margin-top:10px; color:#333; text-decoration:none; }
+a:hover { text-decoration:underline; }
+</style>
+</head>
+<body>
+
+<div class="container">
+<h2>登录</h2>
+<input type="text" id="loginAccount" placeholder="账号">
+<input type="password" id="loginPassword" placeholder="密码">
+<button onclick="login()">登录</button>
+<a href="register.html">去注册</a>
+<div id="message"></div>
+</div>
+
+<script>
+const SUPABASE_URL = 'https://difmdyqvnncqfehiioce.supabase.co/rest/v1/';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRpZm1keXF2bm5jcWZlaGlpb2NlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjIzMjY3NjAsImV4cCI6MjA3NzkwMjc2MH0.bZuGDW2iNZWAuZ-GesIgByjDVxP3ezzZXTBRVNK99-Y';
+const HEADERS = { "apikey": SUPABASE_KEY, "Authorization": "Bearer "+SUPABASE_KEY, "Content-Type":"application/json" };
+
+function showMessage(msg, color='red'){ document.getElementById('message').style.color=color; document.getElementById('message').innerText=msg; }
+
+async function login(){
+    const account = document.getElementById('loginAccount').value.trim();
+    const password = document.getElementById('loginPassword').value.trim();
+    if(!account||!password){ showMessage('请填写账号和密码'); return; }
+
+    let res = await fetch(`${SUPABASE_URL}users?userAccount=eq.${account}&pwd=eq.${password}`, { headers:HEADERS });
+    let data = await res.json();
+    if(res.ok && data.length>0){ showMessage('登录成功','green'); console.log(data[0]); }
+    else { showMessage('账号或密码错误'); }
+}
+</script>
+
+</body>
+</html>

@@ -8,7 +8,7 @@
         body {
             margin: 0;
             font-family: "PingFang SC", Arial, sans-serif;
-            background-color: #e6f0ff; /* 蓝色背景 */
+            background-color: #e6f0ff;
             color: #333;
             padding: 20px;
             box-sizing: border-box;
@@ -43,24 +43,29 @@
             box-shadow: 0 4px 12px rgba(0,0,0,0.1);
         }
 
-        .features, .advantages {
+        .features {
             display: flex;
             flex-wrap: wrap;
-            justify-content: space-around;
+            justify-content: space-between;
         }
 
-        .feature, .advantage {
-            width: 45%;
-            margin: 10px 0;
+        .feature {
+            width: 48%;
+            margin-bottom: 20px;
             display: flex;
             flex-direction: column;
             align-items: center;
         }
 
-        .feature img, .advantage img {
+        .feature img {
             width: 80px;
             height: 80px;
             margin-bottom: 8px;
+        }
+
+        .advantages img {
+            width: 100%;
+            border-radius: 12px;
         }
 
         .qr-section {
@@ -76,96 +81,68 @@
         @media (max-width: 400px) {
             h1 { font-size: 1.5rem; }
             h2 { font-size: 1.2rem; }
-            .feature, .advantage { width: 100%; }
-            .feature img, .advantage img { width: 60px; height: 60px; }
+            .feature { width: 100%; }
+            .feature img { width: 60px; height: 60px; }
             .qr-section img { width: 150px; height: 150px; }
         }
     </style>
 </head>
 <body>
 
-    <h1>收费站手持收费机</h1>
-    <p>ETC新型收费模式应运而生，功能全面、操作简便，提高通行效率和收费安全性。</p>
+<h1>收费站手持收费机</h1>
+<p>ETC新型收费模式应运而生，功能全面、操作简便，提高通行效率和收费安全性。</p>
 
-    <!-- 八大功能 -->
-    <div class="section">
-        <h2>八大功能</h2>
-        <div class="features">
-            <div class="feature">
-                <img src="img/icon_sao.png" alt="OBU/CPC读写功能">
-                <p>OBU/CPC读写功能</p>
-            </div>
-            <div class="feature">
-                <img src="https://via.placeholder.com/80?text=软件" alt="内置收费软件">
-                <p>内置收费软件</p>
-            </div>
-            <div class="feature">
-                <img src="https://via.placeholder.com/80?text=名单" alt="黑/白名单功能">
-                <p>黑/白名单功能</p>
-            </div>
-            <div class="feature">
-                <img src="https://via.placeholder.com/80?text=查询" alt="数据查询统计">
-                <p>数据查询统计</p>
-            </div>
-            <div class="feature">
-                <img src="https://via.placeholder.com/80?text=车牌" alt="车牌自动识别">
-                <p>车牌自动识别</p>
-            </div>
-            <div class="feature">
-                <img src="https://via.placeholder.com/80?text=CPC" alt="CPC卡发放">
-                <p>CPC卡发放</p>
-            </div>
-            <div class="feature">
-                <img src="https://via.placeholder.com/80?text=移动支付" alt="移动支付">
-                <p>移动支付</p>
-            </div>
-            <div class="feature">
-                <img src="https://via.placeholder.com/80?text=安全交易" alt="安全交易">
-                <p>安全交易</p>
-            </div>
+<!-- 八大功能 -->
+<div class="section">
+    <h2>八大功能</h2>
+    <div class="features">
+        <div class="feature">
+            <img src="img/icon_sao.png" alt="OBU/CPC读写功能">
+            <p>OBU/CPC读写功能</p>
+        </div>
+        <div class="feature">
+            <img src="img/icon_sf.png" alt="内置收费软件">
+            <p>内置收费软件</p>
+        </div>
+        <div class="feature">
+            <img src="img/icon_bai.png" alt="黑/白名单功能">
+            <p>黑/白名单功能</p>
+        </div>
+        <div class="feature">
+            <img src="img/icon_tongji.png" alt="数据查询统计">
+            <p>数据查询统计</p>
+        </div>
+        <div class="feature">
+            <img src="img/icon_car.png" alt="车牌自动识别">
+            <p>车牌自动识别</p>
+        </div>
+        <div class="feature">
+            <img src="img/icon_cpc.png" alt="CPC卡发放">
+            <p>CPC卡发放</p>
+        </div>
+        <div class="feature">
+            <img src="img/icon_pay.png" alt="移动支付">
+            <p>移动支付</p>
+        </div>
+        <div class="feature">
+            <img src="img/icon_jiaoyi.png" alt="安全交易">
+            <p>安全交易</p>
         </div>
     </div>
+</div>
 
-    <!-- 产品优势 -->
-    <div class="section">
-        <h2>产品优势</h2>
-        <div class="advantages">
-            <div class="advantage">
-                <img src="https://via.placeholder.com/80?text=功能" alt="功能全面">
-                <p>功能全面，易于管理</p>
-            </div>
-            <div class="advantage">
-                <img src="https://via.placeholder.com/80?text=速度" alt="提升通行速度">
-                <p>提升通行速度</p>
-            </div>
-            <div class="advantage">
-                <img src="https://via.placeholder.com/80?text=拥堵" alt="有效应对拥堵">
-                <p>有效应对拥堵</p>
-            </div>
-            <div class="advantage">
-                <img src="https://via.placeholder.com/80?text=安全" alt="保证交易安全">
-                <p>保证交易安全，省时方便</p>
-            </div>
-            <div class="advantage">
-                <img src="https://via.placeholder.com/80?text=效率" alt="提高收费效率">
-                <p>提高收费效率</p>
-            </div>
-            <div class="advantage">
-                <img src="https://via.placeholder.com/80?text=成本" alt="降低资源成本">
-                <p>降低资源成本</p>
-            </div>
-        </div>
-    </div>
+<!-- 产品优势 -->
+<div class="section advantages">
+    <h2>产品优势</h2>
+    <img src="img/product_advantage.png" alt="产品优势">
+</div>
 
-    <!-- 二维码 -->
-    <div class="qr-section">
-        <h2>扫码咨询</h2>
-        <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=https://example.com" alt="二维码">
-        <p>扫码添加好友，了解详情</p>
-    </div>
+<!-- 二维码 -->
+<div class="qr-section">
+    <h2>扫码咨询</h2>
+    <img src="img/qr_code.png" alt="二维码">
+    <p>扫码添加好友，了解详情</p>
+</div>
 
 </body>
 </html>
-
-
-

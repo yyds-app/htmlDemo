@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>记忆翻牌游戏</title>
+  <!-- 引入Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- 引入Font Awesome -->
+  <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+  
+  <!-- 配置Tailwind自定义颜色和字体 -->
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#4F46E5', // 主色调：靛蓝色
+            secondary: '#10B981', // 辅助色：绿色（匹配成功）
+            accent: '#F59E0B', // 强调色：琥珀色
+            danger: '#EF4444', // 危险色：红色（匹配失败）
+            dark: '#1E293B', // 深色
+          },
+          fontFamily: {
+            game: ['"Press Start 2P"', 'cursive', 'sans-serif'],
+            inter: ['Inter', 'sans-serif'],
+          },
+        },
+      }
+    }
+  </script>
+  
+  <!-- 自定义工具类 -->
+  <style type="text/tailwindcss">
+    @layer utilities {
+      .content-auto {
+        content-visibility: auto;
+      }
+      .card-flip {
+        perspective: 1000px;
+        transform-style: preserve-3d;
+      }
+      .card-inner {
+        transition: transform 0.6s;
+        transform-style: preserve-3d;
+      }
+      .card-flipped .card-inner {
+        transform: rotateY(180deg);
+      }
+      .card-front, .card-back {
+        backface-visibility: hidden;
+      }
+      .card-back {
+        transform: rotateY(180deg);
+      }
+      .text-shadow {
+        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+      }
+      .animate-bounce-custom {
+        animation: bounce 0.6s ease-in-out;
+      }
+      @keyframes bounce {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-10px); }
+      }
+    }
+  </style>
+  
+  <!-- 额外样式 -->
+  <style>
+    /* 加载Google字体 */
+    @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+    
+    body {
+      background-color: #f0f9ff;
+      background-image: 
+        radial-gradient(#4F46E511 1px, transparent 1px),
+        radial-gradient(#4F46E511 1px, #f0f9ff 1px);
+      background-size: 40px 40px;
+      background-position: 0 0, 20px 20px;
+    }
+    
+    .card {
+      transition: all 0.3s ease;
+    }
+    
+    .card:hover:not(.card-flipped):not(.card-matched) {
+      transform: translateY(-5px);
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    }
+    
+    .matched-animation {
+      animation: matched 0.5s ease-in-out;
+    }
+    
+    @keyframes matched {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.1); }
+    }
+    
+    .victory-animation {
+      animation: victory 1s ease-in-out;
+    }
+    
+    @keyframes victory {
+      0% { transform: scale(0.8); opacity: 0; }
+      50% { transform: scale(1.2); }
+      100% { transform: scale(1); opacity: 1; }
+    }
+  </style>
+</head>
+<body class="font-inter min-h-screen flex flex-col">
+  <!-- 游戏头部 -->
+  <header class="bg-gradient-to-r from-primary to-primary/80 text-white shadow-lg">
+    <div class="container mx-auto px-4 py-6">
+      <h1 class="text-[clamp(1.5rem,3vw,2.5rem)] font-bold text-center text-shadow">
+        <i class="fa fa-puzzle-piece mr-2"></i>记忆翻牌游戏
+      </h1>
+    </div>
+  </header>
+
+  <!-- 游戏主体 -->
+  <main class="flex-grow container mx-auto px-4 py-8">
+    <!-- 游戏信息面板 -->
+    <div class="bg-white rounded-xl shadow-md p-4 mb-8 flex flex-wrap justify-between items-center gap-4">
+      <div class="flex flex-wrap gap-6">
+        <div class="flex items-center">
+          <i class="fa fa-clock-o text-primary text-2xl mr-2"></i>
+          <div>
+            <p class="text-sm text-gray-500">时间</p>
+            <p id="timer" class="font-bold text-lg">00:00</p>
+          </div>
+        </div>
+        <div class="flex items-center">
+          <i class="fa fa-refresh text-primary text-2xl mr-2"></i>
+          <div>
+            <p class="text-sm text-gray-500">步数</p>
+            <p id="moves" class="font-bold text-lg">0</p>
+          </div>
+        </div>
+        <div class="flex items-center">
+          <i class="fa fa-star text-accent text-2xl mr-2"></i>
+          <div>
+            <p class="text-sm text-gray-500">已匹配</p>
+            <p id="matches" class="font-bold text-lg">0/0</p>
+          </div>
+        </div>
+      </div>
+      
+      <div class="flex flex-wrap gap-3">
+        <div class="flex items-center gap-2">
+          <label for="difficulty" class="font-medium">难度:</label>
+          <select id="difficulty" class="bg-gray-100 border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary/50">
+            <option value="easy">简单 (4x4)</option>
+            <option value="medium" selected>中等 (6x4)</option>
+            <option value="hard">困难 (6x6)</option>
+          </select>
+        </div>
+        <button id="restart-btn" class="bg-primary hover:bg-primary/90 text-white font-medium px-4 py-2 rounded-lg transition-all flex items-center gap-2 shadow hover:shadow-md">
+          <i class="fa fa-refresh"></i> 重新开始
+        </button>
+      </div>
+    </div>
+    
+    <!-- 游戏区域 -->
+    <div id="game-container" class="grid gap-4 justify-items-center">
+      <!-- 卡片将通过JavaScript动态生成 -->
+    </div>
+    
+    <!-- 胜利弹窗 -->
+    <div id="victory-modal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 hidden">
+      <div class="bg-white rounded-xl p-8 max-w-md w-full mx-4 victory-animation shadow-2xl">
+        <div class="text-center">
+          <div class="inline-block p-4 rounded-full bg-secondary/20 mb-4">
+            <i class="fa fa-trophy text-5xl text-secondary"></i>
+          </div>
+          <h2 class="text-2xl font-bold mb-2">恭喜你赢了！</h2>
+          <p class="text-gray-600 mb-6">你成功完成了游戏挑战</p>
+          
+          <div class="grid grid-cols-2 gap-4 mb-6">
+            <div class="bg-gray-100 rounded-lg p-3">
+              <p class="text-sm text-gray-500">用时</p>
+              <p id="final-time" class="font-bold text-lg">00:00</p>
+            </div>
+            <div class="bg-gray-100 rounded-lg p-3">
+              <p class="text-sm text-gray-500">步数</p>
+              <p id="final-moves" class="font-bold text-lg">0</p>
+            </div>
+          </div>
+          
+          <button id="play-again-btn" class="bg-primary hover:bg-primary/90 text-white font-medium px-6 py-3 rounded-lg transition-all w-full shadow hover:shadow-md">
+            再玩一次
+          </button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- 页脚 -->
+  <footer class="bg-dark text-white py-6">
+    <div class="container mx-auto px-4 text-center">
+      <p>© 2023 记忆翻牌游戏 | 用你的记忆力挑战极限！</p>
+    </div>
+  </footer>
+
+  <script>
+    // 游戏配置和状态
+    const gameState = {
+      cards: [],
+      flippedCards: [],
+      matchedPairs: 0,
+      totalPairs: 0,
+      moves: 0,
+      timer: null,
+      seconds: 0,
+      isProcessing: false,
+      difficulty: 'medium' // 默认中等难度
+    };
+    
+    // 卡片图标集合（使用Font Awesome图标）
+    const cardIcons = [
+      'fa-heart', 'fa-star', 'fa-diamond', 'fa-bolt', 'fa-leaf', 
+      'fa-bomb', 'fa-coffee', 'fa-car', 'fa-plane', 'fa-rocket',
+      'fa-tree', 'fa-moon-o', 'fa-sun-o', 'fa-anchor', 'fa-bell',
+      'fa-bicycle', 'fa-birthday-cake', 'fa-camera', 'fa-cloud',
+      'fa-cube', 'fa-dog', 'fa-flag', 'fa-gamepad', 'fa-gift',
+      'fa-globe', 'fa-home', 'fa-key', 'fa-laptop', 'fa-music', 'fa-paw'
+    ];
+    
+    // DOM元素
+    const gameContainer = document.getElementById('game-container');
+    const movesCounter = document.getElementById('moves');
+    const matchesCounter = document.getElementById('matches');
+    const timerDisplay = document.getElementById('timer');
+    const restartButton = document.getElementById('restart-btn');
+    const difficultySelect = document.getElementById('difficulty');
+    const victoryModal = document.getElementById('victory-modal');
+    const finalTimeDisplay = document.getElementById('final-time');
+    const finalMovesDisplay = document.getElementById('final-moves');
+    const playAgainButton = document.getElementById('play-again-btn');
+    
+    // 初始化游戏
+    function initGame() {
+      // 重置游戏状态
+      resetGameState();
+      
+      // 根据难度设置游戏尺寸
+      let rows, cols;
+      switch(gameState.difficulty) {
+        case 'easy':
+          rows = 4;
+          cols = 4;
+          break;
+        case 'medium':
+          rows = 4;
+          cols = 6;
+          break;
+        case 'hard':
+          rows = 6;
+          cols = 6;
+          break;
+      }
+      
+      // 设置网格布局
+      gameContainer.style.gridTemplateColumns = `repeat(${cols}, minmax(0, 1fr))`;
+      
+      // 计算总对数并更新显示
+      gameState.totalPairs = (rows * cols) / 2;
+      matchesCounter.textContent = `0/${gameState.totalPairs}`;
+      
+      // 创建卡片对
+      createCardPairs(rows * cols);
+      
+      // 开始计时
+      startTimer();
+    }
+    
+    // 重置游戏状态
+    function resetGameState() {
+      // 清空游戏容器
+      gameContainer.innerHTML = '';
+      
+      // 重置游戏状态
+      gameState.cards = [];
+      gameState.flippedCards = [];
+      gameState.matchedPairs = 0;
+      gameState.moves = 0;
+      gameState.seconds = 0;
+      gameState.isProcessing = false;
+      
+      // 重置显示
+      movesCounter.textContent = '0';
+      timerDisplay.textContent = '00:00';
+      
+      // 清除计时器
+      if (gameState.timer) {
+        clearInterval(gameState.timer);
+        gameState.timer = null;
+      }
+      
+      // 隐藏胜利弹窗
+      victoryModal.classList.add('hidden');
+    }
+    
+    // 创建卡片对
+    function createCardPairs(totalCards) {
+      // 确保总卡片数为偶数
+      if (totalCards % 2 !== 0) {
+        totalCards++;
+      }
+      
+      // 随机选择图标
+      const selectedIcons = [...cardIcons]
+        .sort(() => 0.5 - Math.random())
+        .slice(0, totalCards / 2);
+      
+      // 创建卡片数组（每个图标出现两次）
+      const cardValues = [...selectedIcons, ...selectedIcons]
+        .sort(() => 0.5 - Math.random());
+      
+      // 创建卡片元素
+      cardValues.forEach((icon, index) => {
+        const card = createCardElement(icon, index);
+        gameContainer.appendChild(card);
+        gameState.cards.push({
+          element: card,
+          icon: icon,
+          isFlipped: false,
+          isMatched: false,
+          id: index
+        });
+      });
+    }
+    
+    // 创建单个卡片元素
+    function createCardElement(icon, index) {
+      const card = document.createElement('div');
+      card.className = 'card card-flip w-full max-w-[80px] aspect-square cursor-pointer';
+      card.dataset.id = index;
+      
+      card.innerHTML = `
+        <div class="card-inner relative w-full h-full">
+          <!-- 卡片正面（翻过去的面） -->
+          <div class="card-front absolute inset-0 bg-primary rounded-xl shadow flex items-center justify-center">
+            <i class="fa fa-question text-white text-2xl"></i>
+          </div>
+          <!-- 卡片背面（显示图标的面） -->
+          <div class="card-back absolute inset-0 bg-white rounded-xl shadow flex items-center justify-center">
+            <i class="fa ${icon} text-primary text-3xl"></i>
+          </div>
+        </div>
+      `;
+      
+      // 添加点击事件
+      card.addEventListener('click', () => handleCardClick(index));
+      
+      return card;
+    }
+    
+    // 处理卡片点击
+    function handleCardClick(cardId) {
+      const card = gameState.cards[cardId];
+      
+      // 忽略已翻开、已匹配或正在处理的卡片
+      if (card.isFlipped || card.isMatched || gameState.isProcessing || gameState.flippedCards.length >= 2) {
+        return;
+      }
+      
+      // 翻牌
+      flipCard(cardId);
+      
+      // 添加到已翻牌列表
+      gameState.flippedCards.push(cardId);
+      
+      // 当翻开两张牌时检查匹配
+      if (gameState.flippedCards.length === 2) {
+        gameState.moves++;
+        movesCounter.textContent = gameState.moves;
+        checkForMatch();
+      }
+    }
+    
+    // 翻牌
+    function flipCard(cardId) {
+      const card = gameState.cards[cardId];
+      card.element.classList.add('card-flipped');
+      card.isFlipped = true;
+    }
+    
+    // 翻回牌
+    function unflipCards() {
+      gameState.flippedCards.forEach(cardId => {
+        const card = gameState.cards[cardId];
+        card.element.classList.remove('card-flipped');
+        card.isFlipped = false;
+      });
+      gameState.flippedCards = [];
+      gameState.isProcessing = false;
+    }
+    
+    // 检查匹配
+    function checkForMatch() {
+      gameState.isProcessing = true;
+      
+      const [firstId, secondId] = gameState.flippedCards;
+      const firstCard = gameState.cards[firstId];
+      const secondCard = gameState.cards[secondId];
+      
+      if (firstCard.icon === secondCard.icon) {
+        // 匹配成功
+        firstCard.isMatched = true;
+        secondCard.isMatched = true;
+        
+        // 添加匹配动画
+        firstCard.element.classList.add('matched-animation', 'bg-secondary/10');
+        secondCard.element.classList.add('matched-animation', 'bg-secondary/10');
+        
+        // 更新匹配计数
+        gameState.matchedPairs++;
+        matchesCounter.textContent = `${gameState.matchedPairs}/${gameState.totalPairs}`;
+        
+        // 清空已翻牌列表
+        gameState.flippedCards = [];
+        
+        // 检查游戏是否结束
+        if (gameState.matchedPairs === gameState.totalPairs) {
+          endGame();
+        } else {
+          gameState.isProcessing = false;
+        }
+      } else {
+        // 匹配失败，添加失败动画
+        firstCard.element.classList.add('bg-danger/10');
+        secondCard.element.classList.add('bg-danger/10');
+        
+        // 延迟后翻回牌
+        setTimeout(() => {
+          // 移除失败动画
+          firstCard.element.classList.remove('bg-danger/10');
+          secondCard.element.classList.remove('bg-danger/10');
+          
+          // 翻回牌
+          unflipCards();
+        }, 1000);
+      }
+    }
+    
+    // 开始计时器
+    function startTimer() {
+      gameState.timer = setInterval(() => {
+        gameState.seconds++;
+        updateTimerDisplay();
+      }, 1000);
+    }
+    
+    // 更新计时器显示
+    function updateTimerDisplay() {
+      const minutes = Math.floor(gameState.seconds / 60);
+      const seconds = gameState.seconds % 60;
+      timerDisplay.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    }
+    
+    // 结束游戏
+    function endGame() {
+      // 停止计时器
+      clearInterval(gameState.timer);
+      
+      // 更新胜利弹窗信息
+      finalTimeDisplay.textContent = timerDisplay.textContent;
+      finalMovesDisplay.textContent = gameState.moves;
+      
+      // 显示胜利弹窗
+      setTimeout(() => {
+        victoryModal.classList.remove('hidden');
+      }, 500);
+    }
+    
+    // 事件监听
+    restartButton.addEventListener('click', initGame);
+    playAgainButton.addEventListener('click', initGame);
+    difficultySelect.addEventListener('change', (e) => {
+      gameState.difficulty = e.target.value;
+      initGame();
+    });
+    
+    // 初始化游戏
+    document.addEventListener('DOMContentLoaded', initGame);
+  </script>
+</body>
+</html>

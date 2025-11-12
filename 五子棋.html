@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>五子棋 - 经典对弈</title>
+  <!-- 引入Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- 引入Font Awesome -->
+  <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+  
+  <!-- 配置Tailwind自定义颜色和字体 -->
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#8B5A2B',      // 木质棕色作为主色调
+            secondary: '#D2B48C',    // 浅棕色作为辅助色
+            board: '#E8C59E',        // 棋盘颜色
+            blackStone: '#1A1A1A',   // 黑棋颜色
+            whiteStone: '#F5F5F5',   // 白棋颜色
+            accent: '#D9534F',       // 强调色（用于胜利提示）
+          },
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+          },
+        },
+      }
+    }
+  </script>
+  
+  <!-- 自定义工具类 -->
+  <style type="text/tailwindcss">
+    @layer utilities {
+      .content-auto {
+        content-visibility: auto;
+      }
+      .stone-shadow {
+        box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.3);
+      }
+      .board-texture {
+        background-image: url('https://p26-flow-imagex-download-sign.byteimg.com/tos-cn-i-a9rns2rl98/4419d17681a44d55abaf89f216e8f7fa.png~tplv-a9rns2rl98-24-95-exif:960:960.png?rcl=20251112113127C856C127713355E85C1E&rk3s=8e244e95&rrcfp=8a172a1a&x-expires=1763523088&x-signature=pP1kqfmFAxlcPfYVhGMPp3fNxJk%3D');
+        background-size: cover;
+        background-blend-mode: overlay;
+      }
+      .stone-hover {
+        transition: transform 0.2s ease;
+      }
+      .stone-hover:hover {
+        transform: scale(1.05);
+      }
+    }
+  </style>
+</head>
+<body class="bg-gray-100 min-h-screen font-sans text-gray-800">
+  <!-- 页面头部 -->
+  <header class="bg-primary text-white shadow-md">
+    <div class="container mx-auto px-4 py-6 flex flex-col md:flex-row justify-between items-center">
+      <div class="flex items-center mb-4 md:mb-0">
+        <i class="fa fa-gamepad text-3xl mr-3"></i>
+        <h1 class="text-2xl md:text-3xl font-bold">五子棋</h1>
+      </div>
+      <div class="text-center md:text-right">
+        <p class="text-secondary">经典对弈 · 智者游戏</p>
+      </div>
+    </div>
+  </header>
+
+  <!-- 主内容区 -->
+  <main class="container mx-auto px-4 py-8 flex flex-col lg:flex-row gap-8 items-center lg:items-start justify-center">
+    
+    <!-- 游戏信息面板 -->
+    <div class="w-full lg:w-64 bg-white rounded-xl shadow-lg p-6 order-2 lg:order-1">
+      <div class="mb-6">
+        <h2 class="text-xl font-bold mb-4 text-primary border-b border-secondary pb-2">游戏状态</h2>
+        
+        <!-- 当前玩家指示器 -->
+        <div class="mb-4">
+          <p class="text-gray-600 mb-2">当前回合</p>
+          <div class="flex items-center" id="current-player">
+            <div class="w-6 h-6 rounded-full bg-blackStone stone-shadow mr-2"></div>
+            <span>黑方行棋</span>
+          </div>
+        </div>
+        
+        <!-- 游戏状态显示 -->
+        <div class="mb-4">
+          <p class="text-gray-600 mb-2">游戏状态</p>
+          <p id="game-status" class="font-medium">游戏进行中</p>
+        </div>
+        
+        <!-- 已落子数 -->
+        <div class="mb-6">
+          <p class="text-gray-600 mb-2">已落子数</p>
+          <p id="move-count" class="font-medium">0</p>
+        </div>
+        
+        <!-- 游戏控制按钮 -->
+        <div class="space-y-3">
+          <button id="restart-btn" class="w-full bg-primary hover:bg-primary/90 text-white py-3 rounded-lg transition-all duration-300 flex items-center justify-center stone-hover">
+            <i class="fa fa-refresh mr-2"></i> 重新开始
+          </button>
+          <button id="undo-btn" class="w-full bg-secondary hover:bg-secondary/90 text-gray-800 py-3 rounded-lg transition-all duration-300 flex items-center justify-center stone-hover">
+            <i class="fa fa-undo mr-2"></i> 悔棋
+          </button>
+        </div>
+      </div>
+      
+      <!-- 游戏规则 -->
+      <div>
+        <h2 class="text-xl font-bold mb-4 text-primary border-b border-secondary pb-2">游戏规则</h2>
+        <ul class="text-gray-600 space-y-2 text-sm">
+          <li class="flex items-start">
+            <i class="fa fa-circle text-xs mt-1.5 mr-2 text-primary"></i>
+            <span>黑白双方轮流在棋盘交叉点落子</span>
+          </li>
+          <li class="flex items-start">
+            <i class="fa fa-circle text-xs mt-1.5 mr-2 text-primary"></i>
+            <span>先在一条直线（横、竖、斜）上连成五子者获胜</span>
+          </li>
+          <li class="flex items-start">
+            <i class="fa fa-circle text-xs mt-1.5 mr-2 text-primary"></i>
+            <span>黑方先行，落子后不能移动或拿掉任何棋子</span>
+          </li>
+        </ul>
+      </div>
+    </div>
+    
+    <!-- 棋盘区域 -->
+    <div class="order-1 lg:order-2">
+      <div class="relative bg-board board-texture rounded-xl shadow-xl p-4 md:p-6 border-4 border-primary">
+        <!-- 棋盘将通过JS绘制 -->
+        <canvas id="board" class="max-w-full h-auto rounded shadow-inner"></canvas>
+        
+        <!-- 胜利提示（默认隐藏） -->
+        <div id="win-message" class="hidden absolute inset-0 bg-black/70 rounded-xl flex flex-col items-center justify-center">
+          <h2 id="winner-text" class="text-3xl md:text-4xl font-bold text-white mb-6 text-center"></h2>
+          <button id="new-game-btn" class="bg-accent hover:bg-accent/90 text-white px-8 py-3 rounded-lg transition-all duration-300 stone-hover">
+            开始新游戏
+          </button>
+        </div>
+      </div>
+      
+      <!-- 落子指示器（在移动设备上显示触摸位置预览） -->
+      <div id="placement-indicator" class="hidden absolute w-8 h-8 rounded-full border-2 border-gray-500/50 pointer-events-none"></div>
+    </div>
+    
+    <!-- 历史记录 -->
+    <div class="w-full lg:w-64 bg-white rounded-xl shadow-lg p-6 order-3">
+      <h2 class="text-xl font-bold mb-4 text-primary border-b border-secondary pb-2">
+        <i class="fa fa-history mr-2"></i> 落子记录
+      </h2>
+      <div id="move-history" class="max-h-80 overflow-y-auto text-sm space-y-1 pr-1">
+        <p class="text-gray-500 italic text-center py-4">游戏尚未开始</p>
+      </div>
+    </div>
+  </main>
+
+  <!-- 页脚 -->
+  <footer class="bg-primary text-white mt-12 py-6">
+    <div class="container mx-auto px-4 text-center">
+      <p>© 2023 五子棋游戏 | 享受经典对弈的乐趣</p>
+      <div class="mt-3 flex justify-center space-x-4">
+        <a href="#" class="text-secondary hover:text-white transition-colors"><i class="fa fa-github text-xl"></i></a>
+        <a href="#" class="text-secondary hover:text-white transition-colors"><i class="fa fa-twitter text-xl"></i></a>
+        <a href="#" class="text-secondary hover:text-white transition-colors"><i class="fa fa-envelope text-xl"></i></a>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    // 等待DOM加载完成
+    document.addEventListener('DOMContentLoaded', () => {
+      // 获取Canvas元素和上下文
+      const canvas = document.getElementById('board');
+      const ctx = canvas.getContext('2d');
+      
+      // 游戏配置
+      const BOARD_SIZE = 15; // 15x15的棋盘
+      const CELL_SIZE = 30;  // 每个格子的大小（像素）
+      const MARGIN = 20;     // 边距
+      
+      // 设置Canvas尺寸
+      canvas.width = CELL_SIZE * (BOARD_SIZE - 1) + MARGIN * 2;
+      canvas.height = canvas.width;
+      
+      // 游戏状态变量
+      let currentPlayer = 'black'; // 'black' 或 'white'
+      let board = Array(BOARD_SIZE).fill().map(() => Array(BOARD_SIZE).fill(null));
+      let gameOver = false;
+      let moveCount = 0;
+      let moveHistory = [];
+      
+      // 获取DOM元素
+      const currentPlayerEl = document.getElementById('current-player');
+      const gameStatusEl = document.getElementById('game-status');
+      const moveCountEl = document.getElementById('move-count');
+      const restartBtn = document.getElementById('restart-btn');
+      const undoBtn = document.getElementById('undo-btn');
+      const winMessage = document.getElementById('win-message');
+      const winnerText = document.getElementById('winner-text');
+      const newGameBtn = document.getElementById('new-game-btn');
+      const moveHistoryEl = document.getElementById('move-history');
+      const placementIndicator = document.getElementById('placement-indicator');
+      
+      // 初始化棋盘
+      function initializeBoard() {
+        // 清空棋盘数据
+        board = Array(BOARD_SIZE).fill().map(() => Array(BOARD_SIZE).fill(null));
+        currentPlayer = 'black';
+        gameOver = false;
+        moveCount = 0;
+        moveHistory = [];
+        
+        // 更新UI
+        updateStatusDisplay();
+        renderBoard();
+        updateMoveHistory();
+        
+        // 隐藏胜利提示
+        winMessage.classList.add('hidden');
+      }
+      
+      // 渲染棋盘
+      function renderBoard() {
+        // 清空画布
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        // 绘制棋盘线
+        ctx.strokeStyle = '#000000';
+        ctx.lineWidth = 1;
+        
+        // 绘制横线和竖线
+        for (let i = 0; i < BOARD_SIZE; i++) {
+          // 横线
+          ctx.beginPath();
+          ctx.moveTo(MARGIN, MARGIN + i * CELL_SIZE);
+          ctx.lineTo(canvas.width - MARGIN, MARGIN + i * CELL_SIZE);
+          ctx.stroke();
+          
+          // 竖线
+          ctx.beginPath();
+          ctx.moveTo(MARGIN + i * CELL_SIZE, MARGIN);
+          ctx.lineTo(MARGIN + i * CELL_SIZE, canvas.height - MARGIN);
+          ctx.stroke();
+        }
+        
+        // 绘制天元和星位
+        const starPoints = [
+          {x: 3, y: 3}, {x: 3, y: 11},
+          {x: 7, y: 7},  // 天元
+          {x: 11, y: 3}, {x: 11, y: 11}
+        ];
+        
+        starPoints.forEach(point => {
+          drawCircle(
+            MARGIN + point.x * CELL_SIZE,
+            MARGIN + point.y * CELL_SIZE,
+            4,
+            '#000000',
+            '#000000'
+          );
+        });
+        
+        // 绘制棋子
+        for (let y = 0; y < BOARD_SIZE; y++) {
+          for (let x = 0; x < BOARD_SIZE; x++) {
+            if (board[y][x]) {
+              const color = board[y][x] === 'black' ? '#1A1A1A' : '#F5F5F5';
+              const strokeColor = board[y][x] === 'black' ? '#000000' : '#CCCCCC';
+              
+              drawCircle(
+                MARGIN + x * CELL_SIZE,
+                MARGIN + y * CELL_SIZE,
+                CELL_SIZE / 2 - 2,
+                color,
+                strokeColor
+              );
+              
+              // 最后一步画个标记
+              if (moveHistory.length > 0) {
+                const lastMove = moveHistory[moveHistory.length - 1];
+                if (lastMove.x === x && lastMove.y === y) {
+                  drawCircle(
+                    MARGIN + x * CELL_SIZE,
+                    MARGIN + y * CELL_SIZE,
+                    4,
+                    '#D9534F',
+                    '#D9534F'
+                  );
+                }
+              }
+            }
+          }
+        }
+      }
+      
+      // 绘制圆形（棋子）
+      function drawCircle(x, y, radius, fillColor, strokeColor) {
+        ctx.beginPath();
+        ctx.arc(x, y, radius, 0, Math.PI * 2);
+        ctx.fillStyle = fillColor;
+        ctx.fill();
+        ctx.strokeStyle = strokeColor;
+        ctx.lineWidth = 1;
+        ctx.stroke();
+      }
+      
+      // 处理棋盘点击
+      function handleBoardClick(event) {
+        if (gameOver) return;
+        
+        // 获取点击位置在Canvas中的坐标
+        const rect = canvas.getBoundingClientRect();
+        const x = event.clientX - rect.left;
+        const y = event.clientY - rect.top;
+        
+        // 计算落子位置
+        const gridX = Math.round((x - MARGIN) / CELL_SIZE);
+        const gridY = Math.round((y - MARGIN) / CELL_SIZE);
+        
+        // 检查位置是否有效
+        if (
+          gridX >= 0 && gridX < BOARD_SIZE &&
+          gridY >= 0 && gridY < BOARD_SIZE &&
+          !board[gridY][gridX]
+        ) {
+          // 落子
+          placeStone(gridX, gridY);
+        }
+      }
+      
+      // 处理触摸移动（显示预览）
+      function handleTouchMove(event) {
+        if (gameOver) return;
+        event.preventDefault();
+        
+        const rect = canvas.getBoundingClientRect();
+        const touch = event.touches[0];
+        const x = touch.clientX - rect.left;
+        const y = touch.clientY - rect.top;
+        
+        // 计算落子位置
+        const gridX = Math.round((x - MARGIN) / CELL_SIZE);
+        const gridY = Math.round((y - MARGIN) / CELL_SIZE);
+        
+        // 检查位置是否有效
+        if (
+          gridX >= 0 && gridX < BOARD_SIZE &&
+          gridY >= 0 && gridY < BOARD_SIZE &&
+          !board[gridY][gridX]
+        ) {
+          // 显示指示器
+          placementIndicator.style.left = `${touch.clientX - 16}px`;
+          placementIndicator.style.top = `${touch.clientY - 16}px`;
+          placementIndicator.style.backgroundColor = currentPlayer === 'black' ? 'rgba(0,0,0,0.2)' : 'rgba(255,255,255,0.5)';
+          placementIndicator.classList.remove('hidden');
+        } else {
+          placementIndicator.classList.add('hidden');
+        }
+      }
+      
+      // 处理触摸结束
+      function handleTouchEnd(event) {
+        placementIndicator.classList.add('hidden');
+        
+        if (gameOver) return;
+        event.preventDefault();
+        
+        const rect = canvas.getBoundingClientRect();
+        const touch = event.changedTouches[0];
+        const x = touch.clientX - rect.left;
+        const y = touch.clientY - rect.top;
+        
+        // 计算落子位置
+        const gridX = Math.round((x - MARGIN) / CELL_SIZE);
+        const gridY = Math.round((y - MARGIN) / CELL_SIZE);
+        
+        // 检查位置是否有效
+        if (
+          gridX >= 0 && gridX < BOARD_SIZE &&
+          gridY >= 0 && gridY < BOARD_SIZE &&
+          !board[gridY][gridX]
+        ) {
+          // 落子
+          placeStone(gridX, gridY);
+        }
+      }
+      
+      // 落子
+      function placeStone(x, y) {
+        // 记录落子
+        board[y][x] = currentPlayer;
+        moveCount++;
+        moveHistory.push({x, y, player: currentPlayer});
+        
+        // 检查是否获胜
+        if (checkWin(x, y, currentPlayer)) {
+          gameOver = true;
+          const winner = currentPlayer === 'black' ? '黑方' : '白方';
+          winnerText.textContent = `${winner}获胜！`;
+          winMessage.classList.remove('hidden');
+          gameStatusEl.textContent = `${winner}获胜`;
+        } 
+        // 检查是否平局
+        else if (moveCount === BOARD_SIZE * BOARD_SIZE) {
+          gameOver = true;
+          winnerText.textContent = '平局！';
+          winMessage.classList.remove('hidden');
+          gameStatusEl.textContent = '平局';
+        } 
+        // 切换玩家
+        else {
+          currentPlayer = currentPlayer === 'black' ? 'white' : 'black';
+        }
+        
+        // 更新UI
+        renderBoard();
+        updateStatusDisplay();
+        updateMoveHistory();
+      }
+      
+      // 检查是否获胜
+      function checkWin(x, y, player) {
+        const directions = [
+          [1, 0],   // 水平
+          [0, 1],   // 垂直
+          [1, 1],   // 对角线 \
+          [1, -1]   // 对角线 /
+        ];
+        
+        for (const [dx, dy] of directions) {
+          let count = 1; // 当前位置已经有一个棋子
+          
+          // 正向检查
+          for (let i = 1; i <= 4; i++) {
+            const nx = x + dx * i;
+            const ny = y + dy * i;
+            
+            if (
+              nx >= 0 && nx < BOARD_SIZE &&
+              ny >= 0 && ny < BOARD_SIZE &&
+              board[ny][nx] === player
+            ) {
+              count++;
+            } else {
+              break;
+            }
+          }
+          
+          // 反向检查
+          for (let i = 1; i <= 4; i++) {
+            const nx = x - dx * i;
+            const ny = y - dy * i;
+            
+            if (
+              nx >= 0 && nx < BOARD_SIZE &&
+              ny >= 0 && ny < BOARD_SIZE &&
+              board[ny][nx] === player
+            ) {
+              count++;
+            } else {
+              break;
+            }
+          }
+          
+          // 如果有五个连续的棋子，返回胜利
+          if (count >= 5) {
+            return true;
+          }
+        }
+        
+        return false;
+      }
+      
+      // 更新状态显示
+      function updateStatusDisplay() {
+        // 更新当前玩家显示
+        currentPlayerEl.innerHTML = currentPlayer === 'black' 
+          ? '<div class="w-6 h-6 rounded-full bg-blackStone stone-shadow mr-2"></div><span>黑方行棋</span>'
+          : '<div class="w-6 h-6 rounded-full bg-whiteStone stone-shadow border border-gray-300 mr-2"></div><span>白方行棋</span>';
+        
+        // 更新步数
+        moveCountEl.textContent = moveCount;
+      }
+      
+      // 更新落子历史
+      function updateMoveHistory() {
+        moveHistoryEl.innerHTML = '';
+        
+        if (moveHistory.length === 0) {
+          moveHistoryEl.innerHTML = '<p class="text-gray-500 italic text-center py-4">游戏尚未开始</p>';
+          return;
+        }
+        
+        moveHistory.forEach((move, index) => {
+          const moveEl = document.createElement('div');
+          const playerClass = move.player === 'black' ? 'bg-blackStone text-white' : 'bg-whiteStone text-gray-800 border border-gray-300';
+          const playerText = move.player === 'black' ? '黑' : '白';
+          
+          // 转换为棋盘坐标表示（A-O, 1-15）
+          const letters = 'ABCDEFGHIJKLMNO';
+          const xCoord = letters[move.x];
+          const yCoord = move.y + 1;
+          
+          moveEl.className = `flex items-center justify-between p-1.5 rounded ${index === moveHistory.length - 1 ? 'bg-secondary/20' : ''}`;
+          moveEl.innerHTML = `
+            <span class="text-sm text-gray-500">${index + 1}.</span>
+            <span class="w-5 h-5 rounded-full ${playerClass} flex items-center justify-center text-xs">${playerText}</span>
+            <span class="text-sm">${xCoord}${yCoord}</span>
+          `;
+          
+          moveHistoryEl.appendChild(moveEl);
+        });
+        
+        // 滚动到底部
+        moveHistoryEl.scrollTop = moveHistoryEl.scrollHeight;
+      }
+      
+      // 悔棋
+      function undoMove() {
+        if (moveHistory.length === 0 || gameOver) return;
+        
+        const lastMove = moveHistory.pop();
+        board[lastMove.y][lastMove.x] = null;
+        moveCount--;
+        currentPlayer = lastMove.player; // 回到上一个玩家
+        
+        gameOver = false;
+        gameStatusEl.textContent = '游戏进行中';
+        
+        renderBoard();
+        updateStatusDisplay();
+        updateMoveHistory();
+      }
+      
+      // 事件监听
+      canvas.addEventListener('click', handleBoardClick);
+      canvas.addEventListener('touchmove', handleTouchMove);
+      canvas.addEventListener('touchend', handleTouchEnd);
+      restartBtn.addEventListener('click', initializeBoard);
+      undoBtn.addEventListener('click', undoMove);
+      newGameBtn.addEventListener('click', initializeBoard);
+      
+      // 窗口大小变化时重绘棋盘
+      window.addEventListener('resize', renderBoard);
+      
+      // 初始化游戏
+      initializeBoard();
+    });
+  </script>
+</body>
+</html>
